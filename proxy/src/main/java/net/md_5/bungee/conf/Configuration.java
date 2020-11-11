@@ -62,7 +62,7 @@ public class Configuration implements ProxyConfig
     private boolean ipForward;
     private Favicon favicon;
     private int compressionThreshold = 256;
-    private String customServerName = "HexaCord";
+    private String customServerName = "KettleCord";
     private boolean alwaysHandlePackets = false;
     private boolean preventProxyConnections;
     private boolean forgeSupport;
@@ -98,7 +98,7 @@ public class Configuration implements ProxyConfig
         throttleLimit = adapter.getInt( "connection_throttle_limit", throttleLimit );
         ipForward = adapter.getBoolean( "ip_forward", ipForward );
         compressionThreshold = adapter.getInt( "network_compression_threshold", compressionThreshold );
-        customServerName = adapter.getString( "custom_server_name", "HexaCord" );
+        customServerName = adapter.getString( "custom_server_name", "KettleCord" );
         alwaysHandlePackets = adapter.getBoolean( "always_handle_packets", false );
         preventProxyConnections = adapter.getBoolean( "prevent_proxy_connections", preventProxyConnections );
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
