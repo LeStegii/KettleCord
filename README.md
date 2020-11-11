@@ -11,7 +11,7 @@ If you want more informations about it, please visit it's github page [here](htt
 
 **What's KettleCord?**</br>
 KettleCord is a fork of HexaCord with some little changes for our Minecraft network KettleMC.net.</br>
-It's also planned to implement some security checks, but that's still a long way off.
+We implemented some patches from [Waterfall](https://github.com/PaperMC/Waterfall/) in order to patch some forge issues.
 
 ### Security warning
 
