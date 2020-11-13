@@ -65,7 +65,7 @@ public class Configuration implements ProxyConfig
     private String customServerName = "KettleCord";
     private boolean alwaysHandlePackets = false;
     private boolean preventProxyConnections;
-    private boolean forgeSupport;
+    private boolean forgeSupport = true; // KettleCord
     private boolean disableEntityRewrite;
 
     public void load()
