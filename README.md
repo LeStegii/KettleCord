@@ -19,6 +19,11 @@ As your Minecraft servers have to run without authentication (online-mode=false)
 
 To combat this, you need to restrict access to these servers for example with a firewall (please see [firewall guide](https://www.spigotmc.org/wiki/firewall-guide/)) or a plugin like [PreventPortBypass](https://www.spigotmc.org/resources/preventportbypass-the-onlyproxyjoin-alternative.54934/).
 
+### License
+
+You can check the (BungeeCord/Hexacord) license [here](LICENSE).</br>
+Any code that has been added by KettleCord is licensed under the license of the respective owner of the code.</br>
+If any changes are made directly by KettleCord it's published under MIT License.
 
 HexaCord is maintained by https://hexagonmc.eu.
 
