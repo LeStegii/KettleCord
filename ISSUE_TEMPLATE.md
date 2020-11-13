@@ -1,4 +1,4 @@
-### What Hexacord version are you using? Post the output of /bungee
+### What KettleCord version are you using? Post the output of /bungee
 
 
 ### Are you using Bungee plugins? If yes, please list all of them + versionnumber
