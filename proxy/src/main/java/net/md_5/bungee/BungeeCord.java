@@ -471,7 +471,8 @@ public class BungeeCord extends ProxyServer
             reconnectHandler.close();
         }
         saveThread.cancel();
-        metricsThread.cancel();
+        // KettleCord (disable metrics)
+        // metricsThread.cancel();
 
         getLogger().info( "Disabling plugins" );
         for ( Plugin plugin : Lists.reverse( new ArrayList<>( pluginManager.getPlugins() ) ) )
