@@ -18,5 +18,6 @@ public class CommandBungee extends Command
     {
         sender.sendMessage( ChatColor.BLUE + "This server is running " + ProxyServer.getInstance().getName() + " version " + ProxyServer.getInstance().getVersion() + " by md_5" );
         sender.sendMessage( ChatColor.BLUE + "Protocol support for 1.7.x by Zartec, ghac and I9hdkill" );
+        sender.sendMessage( ChatColor.BLUE + "Basic support for Fabric by BukkitBuilder" );
     }
 }
