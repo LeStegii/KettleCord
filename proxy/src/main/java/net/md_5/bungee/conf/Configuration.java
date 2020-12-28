@@ -67,6 +67,7 @@ public class Configuration implements ProxyConfig
     private boolean preventProxyConnections;
     private boolean forgeSupport = true; // KettleCord
     private boolean disableEntityRewrite;
+    private boolean fabricSupport;
 
     public void load()
     {
@@ -104,7 +105,8 @@ public class Configuration implements ProxyConfig
         preventProxyConnections = adapter.getBoolean( "prevent_proxy_connections", preventProxyConnections );
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
         disableEntityRewrite = adapter.getBoolean( "disable_entity_rewrite", true );
-
+        fabricSupport = adapter.getBoolean( "fabric_support", fabricSupport );
+        
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
 
         Preconditions.checkArgument( listeners != null && !listeners.isEmpty(), "No listeners defined." );

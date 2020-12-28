@@ -26,6 +26,7 @@ import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.connection.CancelSendSignal;
 import net.md_5.bungee.connection.DownstreamBridge;
 import net.md_5.bungee.connection.LoginResult;
+import net.md_5.bungee.fabric.FabricConstants;
 import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.forge.ForgeServerHandler;
 import net.md_5.bungee.forge.ForgeUtils;
@@ -43,6 +44,8 @@ import net.md_5.bungee.protocol.packet.GameState;
 import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.Login;
+import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
+import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -191,6 +194,15 @@ public class ServerConnector extends PacketHandler
     public void handle(SetCompression setCompression) throws Exception
     {
         ch.setCompressionThreshold( setCompression.getThreshold() );
+    }
+
+    @Override
+    public void handle(LoginPayloadRequest request) throws Exception
+    {
+        if ( BungeeCord.getInstance().config.isFabricSupport() && request.getChannel().equals( FabricConstants.FABRIC_API_CHANNEL ) )
+        {
+            ch.write( new LoginPayloadResponse( FabricConstants.FABRIC_API_PAYLOAD_ID, user.getFabricChannelData() ) );
+        }
     }
 
     @Override
