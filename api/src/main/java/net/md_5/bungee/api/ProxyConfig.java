@@ -125,4 +125,18 @@ public interface ProxyConfig
      * @return favicon
      */
     Favicon getFaviconObject();
+
+    /**
+     * The server name for the server ping list.
+     *
+     * @return customservername
+     */
+    String getCustomServerName();
+
+    /**
+     * Whether the server should handle packets before the player has connected to a server
+     *
+     * @return shouldHandlePackets
+     */
+    boolean getAlwaysHandlePackets();
 }

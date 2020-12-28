@@ -62,8 +62,11 @@ public class Configuration implements ProxyConfig
     private boolean ipForward;
     private Favicon favicon;
     private int compressionThreshold = 256;
+    private String customServerName = "KettleCord";
+    private boolean alwaysHandlePackets = false;
     private boolean preventProxyConnections;
-    private boolean forgeSupport;
+    private boolean forgeSupport = true; // KettleCord
+    private boolean disableEntityRewrite;
     private boolean fabricSupport;
 
     public void load()
@@ -97,10 +100,13 @@ public class Configuration implements ProxyConfig
         throttleLimit = adapter.getInt( "connection_throttle_limit", throttleLimit );
         ipForward = adapter.getBoolean( "ip_forward", ipForward );
         compressionThreshold = adapter.getInt( "network_compression_threshold", compressionThreshold );
+        customServerName = adapter.getString( "custom_server_name", "KettleCord" );
+        alwaysHandlePackets = adapter.getBoolean( "always_handle_packets", false );
         preventProxyConnections = adapter.getBoolean( "prevent_proxy_connections", preventProxyConnections );
         forgeSupport = adapter.getBoolean( "forge_support", forgeSupport );
+        disableEntityRewrite = adapter.getBoolean( "disable_entity_rewrite", true );
         fabricSupport = adapter.getBoolean( "fabric_support", fabricSupport );
-
+        
         disabledCommands = new CaseInsensitiveSet( (Collection<String>) adapter.getList( "disabled_commands", Arrays.asList( "disabledcommandhere" ) ) );
 
         Preconditions.checkArgument( listeners != null && !listeners.isEmpty(), "No listeners defined." );
@@ -157,5 +163,21 @@ public class Configuration implements ProxyConfig
     public Favicon getFaviconObject()
     {
         return favicon;
+    }
+
+    @Override
+    public String getCustomServerName()
+    {
+        return customServerName;
+    }
+
+    @Override
+    public boolean getAlwaysHandlePackets()
+    {
+        return alwaysHandlePackets;
+    }
+    
+    public boolean disableEntityRewrite() {
+    	return disableEntityRewrite;
     }
 }

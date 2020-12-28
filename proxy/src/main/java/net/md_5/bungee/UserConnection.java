@@ -167,8 +167,12 @@ public final class UserConnection implements ProxiedPlayer
 
         forgeClientHandler = new ForgeClientHandler( this );
 
+        // No-config FML handshake marker.
         // Set whether the connection has a 1.8 FML marker in the handshake.
-        forgeClientHandler.setFmlTokenInHandshake( this.getPendingConnection().getExtraDataInHandshake().contains( ForgeConstants.FML_HANDSHAKE_TOKEN ) );
+        if ( this.getPendingConnection().getExtraDataInHandshake().contains( ForgeConstants.FML_HANDSHAKE_TOKEN ) )
+        {
+            forgeClientHandler.setFmlTokenInHandshake( true );
+        }
     }
 
     public void sendPacket(PacketWrapper packet)
@@ -186,6 +190,10 @@ public final class UserConnection implements ProxiedPlayer
     public void setDisplayName(String name)
     {
         Preconditions.checkNotNull( name, "displayName" );
+        if ( pendingConnection.getVersion() <= ProtocolConstants.MINECRAFT_1_7_6 )
+        {
+            Preconditions.checkArgument( name.length() <= 16, "Display name cannot be longer than 16 characters" );
+        }
         displayName = name;
     }
 
@@ -479,7 +487,7 @@ public final class UserConnection implements ProxiedPlayer
         // transform score components
         message = ChatComponentTransformer.getInstance().transform( this, true, message );
 
-        if ( position == ChatMessageType.ACTION_BAR )
+        if ( position == ChatMessageType.ACTION_BAR && pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
         {
             // Versions older than 1.11 cannot send the Action bar with the new JSON formattings
             // Fix by converting to a legacy message, see https://bugs.mojang.com/browse/MC-119145
@@ -675,25 +683,31 @@ public final class UserConnection implements ProxiedPlayer
     @Override
     public void setTabHeader(BaseComponent header, BaseComponent footer)
     {
-        header = ChatComponentTransformer.getInstance().transform( this, true, header )[0];
-        footer = ChatComponentTransformer.getInstance().transform( this, true, footer )[0];
+        if ( pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        {
+            header = ChatComponentTransformer.getInstance().transform( this, true, header )[0];
+            footer = ChatComponentTransformer.getInstance().transform( this, true, footer )[0];
 
-        unsafe().sendPacket( new PlayerListHeaderFooter(
-                ComponentSerializer.toString( header ),
-                ComponentSerializer.toString( footer )
-        ) );
+            unsafe().sendPacket( new PlayerListHeaderFooter(
+                    ComponentSerializer.toString( header ),
+                    ComponentSerializer.toString( footer )
+            ) );
+        }
     }
 
     @Override
     public void setTabHeader(BaseComponent[] header, BaseComponent[] footer)
     {
-        header = ChatComponentTransformer.getInstance().transform( this, true, header );
-        footer = ChatComponentTransformer.getInstance().transform( this, true, footer );
+        if ( pendingConnection.getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+        {
+            header = ChatComponentTransformer.getInstance().transform( this, true, header );
+            footer = ChatComponentTransformer.getInstance().transform( this, true, footer );
 
-        unsafe().sendPacket( new PlayerListHeaderFooter(
-                ComponentSerializer.toString( header ),
-                ComponentSerializer.toString( footer )
-        ) );
+            unsafe().sendPacket( new PlayerListHeaderFooter(
+                    ComponentSerializer.toString( header ),
+                    ComponentSerializer.toString( footer )
+            ) );
+        }
     }
 
     @Override
@@ -716,7 +730,7 @@ public final class UserConnection implements ProxiedPlayer
 
     public void setCompressionThreshold(int compressionThreshold)
     {
-        if ( !ch.isClosing() && this.compressionThreshold == -1 && compressionThreshold >= 0 )
+        if ( !ch.isClosing() && this.compressionThreshold == -1 && getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_8 && compressionThreshold >= 0 )
         {
             this.compressionThreshold = compressionThreshold;
             unsafe.sendPacket( new SetCompression( compressionThreshold ) );

@@ -6,6 +6,7 @@ import io.netty.buffer.ByteBufInputStream;
 import java.io.DataInputStream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import se.llbit.nbt.NamedTag;
@@ -27,8 +28,17 @@ public abstract class EntityMap
     // Returns the correct entity map for the protocol version
     public static EntityMap getEntityMap(int version)
     {
+    	// Waterfall start (Edit by KettleCord)
+    	if (BungeeCord.getInstance().config.disableEntityRewrite()) {
+    		return EntityMap_Dummy.INSTANCE;
+    	}
+    	// Waterfall end (Edit by KettleCord)
         switch ( version )
         {
+            case ProtocolConstants.MINECRAFT_1_7_2:
+                return EntityMap_1_7_2.INSTANCE;
+            case ProtocolConstants.MINECRAFT_1_7_6:
+                return EntityMap_1_7_6.INSTANCE;
             case ProtocolConstants.MINECRAFT_1_8:
                 return EntityMap_1_8.INSTANCE;
             case ProtocolConstants.MINECRAFT_1_9:
@@ -284,7 +294,13 @@ public abstract class EntityMap
                     DefinedPacket.readVarInt( packet );
                     break;
                 default:
-                    throw new IllegalArgumentException( "Unknown meta type " + type );
+                    // Waterfall start - Don't lie (Edit by KettleCord)
+                    if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+                    {
+                        type++;
+                    }
+                    throw new IllegalArgumentException( "Unknown meta type " + type + ": Using mods? refer to disable_entity_rewrite in the config" );
+                    // Waterfall end (Edit by KettleCord)
             }
         }
 
@@ -322,12 +338,15 @@ public abstract class EntityMap
         int packetId = DefinedPacket.readVarInt( packet );
         int packetIdLength = packet.readerIndex() - readerIndex;
 
-        if ( ints[packetId] )
+        if ( packetId >= 0 )
         {
-            rewriteInt( packet, oldId, newId, readerIndex + packetIdLength );
-        } else if ( varints[packetId] )
-        {
-            rewriteVarInt( packet, oldId, newId, readerIndex + packetIdLength );
+            if ( ints[ packetId ] )
+            {
+                rewriteInt( packet, oldId, newId, readerIndex + packetIdLength );
+            } else if ( varints[ packetId ] )
+            {
+                rewriteVarInt( packet, oldId, newId, readerIndex + packetIdLength );
+            }
         }
         packet.readerIndex( readerIndex );
     }

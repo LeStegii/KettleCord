@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Queue;
 import java.util.Set;
@@ -33,6 +34,7 @@ import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
+import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
@@ -105,16 +107,36 @@ public class ServerConnector extends PacketHandler
         {
             String newHost = copiedHandshake.getHost() + "\00" + user.getAddress().getHostString() + "\00" + user.getUUID();
 
+            // Handle properties.
+            LoginResult.Property[] properties = new LoginResult.Property[0];
+
             LoginResult profile = user.getPendingConnection().getLoginProfile();
             if ( profile != null && profile.getProperties() != null && profile.getProperties().length > 0 )
             {
-                newHost += "\00" + BungeeCord.getInstance().gson.toJson( profile.getProperties() );
+                properties = profile.getProperties();
             }
+
+            if ( user.getForgeClientHandler().isFmlTokenInHandshake() )
+            {
+                // Get the current properties and copy them into a slightly bigger array.
+                LoginResult.Property[] newp = Arrays.copyOf( properties, properties.length + 2 );
+                // Add a new profile property that specifies that this user is a Forge user.
+                newp[newp.length - 2] = new LoginResult.Property( ForgeConstants.FML_LOGIN_PROFILE, "true", null );
+                // If we do not perform the replacement, then the IP Forwarding code in Spigot et. al. will try to split on this prematurely.
+                newp[newp.length - 1] = new LoginResult.Property( ForgeConstants.EXTRA_DATA, user.getExtraDataInHandshake().replaceAll( "\0", "\1" ), "" );
+                // All done.
+                properties = newp;
+            }
+            // If we touched any properties, then append them
+            if ( properties.length > 0 )
+            {
+                newHost += "\00" + BungeeCord.getInstance().gson.toJson( properties );
+            }
+
             copiedHandshake.setHost( newHost );
         } else if ( !user.getExtraDataInHandshake().isEmpty() )
         {
-            // Only restore the extra data if IP forwarding is off.
-            // TODO: Add support for this data with IP forwarding.
+            // Restore the extra data
             copiedHandshake.setHost( copiedHandshake.getHost() + user.getExtraDataInHandshake() );
         }
 
@@ -207,7 +229,7 @@ public class ServerConnector extends PacketHandler
             ch.write( message );
         }
 
-        if ( user.getSettings() != null )
+        if ( !BungeeCord.getInstance().config.disableEntityRewrite() && user.getSettings() != null ) // Waterfall (Edit by KettleCord)
         {
             ch.write( user.getSettings() );
         }
@@ -223,34 +245,52 @@ public class ServerConnector extends PacketHandler
             user.setClientEntityId( login.getEntityId() );
             user.setServerEntityId( login.getEntityId() );
 
-            // Set tab list size, TODO: what shall we do about packet mutability
-            Login modLogin = new Login( login.getEntityId(), login.isHardcore(), login.getGameMode(), login.getPreviousGameMode(), login.getWorldNames(), login.getDimensions(), login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(),
-                    (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.getViewDistance(), login.isReducedDebugInfo(), login.isNormalRespawn(), login.isDebug(), login.isFlat() );
+            // Set tab list size, this sucks balls, TODO: what shall we do about packet mutability
+            // Forge allows dimension ID's > 127
+
+            Login modLogin;
+            if ( handshakeHandler != null && handshakeHandler.isServerForge() )
+            {
+                modLogin = new Login( login.getEntityId(), login.isHardcore(), login.getGameMode(), login.getPreviousGameMode(), login.getWorldNames(), login.getDimensions(), login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(),
+                        (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.getViewDistance(), login.isReducedDebugInfo(), login.isNormalRespawn(), login.isDebug(), login.isFlat() );
+            } else
+            {
+                modLogin = new Login( login.getEntityId(), login.isHardcore(), login.getGameMode(), login.getPreviousGameMode(), login.getWorldNames(), login.getDimensions(), login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(),
+                        (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.getViewDistance(), login.isReducedDebugInfo(), login.isNormalRespawn(), login.isDebug(), login.isFlat() );
+            }
 
             user.unsafe().sendPacket( modLogin );
 
-            if ( user.getServer() != null )
+            if ( user.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_8 )
             {
-                user.getServer().setObsolete( true );
-                user.getTabListHandler().onServerChange();
-
-                user.getServerSentScoreboard().clear();
-
-                for ( UUID bossbar : user.getSentBossBars() )
-                {
-                    // Send remove bossbar packet
-                    user.unsafe().sendPacket( new net.md_5.bungee.protocol.packet.BossBar( bossbar, 1 ) );
-                }
-                user.getSentBossBars().clear();
-
-                user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
-                user.getServer().disconnect( "Quitting" );
+                MinecraftOutput out = new MinecraftOutput();
+                out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket( ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")" );
+                user.unsafe().sendPacket( new PluginMessage( "MC|Brand", out.toArray(), handshakeHandler.isServerForge() ) );
             } else
             {
-                ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
-                DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
-                user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
-                brand.release();
+                if ( user.getServer() != null )
+                {
+                    user.getServer().setObsolete( true );
+                    user.getTabListHandler().onServerChange();
+
+                    user.getServerSentScoreboard().clear();
+
+                    for ( UUID bossbar : user.getSentBossBars() )
+                    {
+                        // Send remove bossbar packet
+                        user.unsafe().sendPacket( new net.md_5.bungee.protocol.packet.BossBar( bossbar, 1 ) );
+                    }
+                    user.getSentBossBars().clear();
+
+                    user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
+                    user.getServer().disconnect( "Quitting" );
+                } else
+                {
+                    ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
+                    DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
+                    user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
+                    brand.release();
+                }
             }
 
             user.setDimension( login.getDimension() );
@@ -260,10 +300,13 @@ public class ServerConnector extends PacketHandler
             user.getTabListHandler().onServerChange();
 
             Scoreboard serverScoreboard = user.getServerSentScoreboard();
+            if ( !BungeeCord.getInstance().config.disableEntityRewrite() ) { // Waterfall (Edit by KettleCord)
             for ( Objective objective : serverScoreboard.getObjectives() )
-            {
-                user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), ScoreboardObjective.HealthDisplay.fromString( objective.getType() ), (byte) 1 ) );
-            }
+                {
+                    //user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), ScoreboardObjective.HealthDisplay.fromString( objective.getType() ), (byte) 1 ) );
+                    user.unsafe().sendPacket( new ScoreboardObjective( objective.getName(), objective.getValue(), objective.getType() == null ? null : ScoreboardObjective.HealthDisplay.fromString( objective.getType() ), (byte) 1 ) ); // Travertine - 1.7
+                }
+            } // Waterfall (Edit by KettleCord)
             for ( Score score : serverScoreboard.getScores() )
             {
                 user.unsafe().sendPacket( new ScoreboardScore( score.getItemName(), (byte) 1, score.getScoreName(), score.getValue() ) );
@@ -290,12 +333,35 @@ public class ServerConnector extends PacketHandler
             }
 
             user.setDimensionChange( true );
-            if ( login.getDimension() == user.getDimension() )
+            if ( BungeeCord.getInstance().config.disableEntityRewrite() && login.getDimension() == user.getDimension() )
             {
                 user.unsafe().sendPacket( new Respawn( (Integer) login.getDimension() >= 0 ? -1 : 0, login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
             }
 
             user.setServerEntityId( login.getEntityId() );
+            
+            // Waterfall start (Edit by KettleCord)
+            if ( BungeeCord.getInstance().config.disableEntityRewrite() ) {
+                // Ensure that we maintain consistency
+                user.setClientEntityId( login.getEntityId() );
+
+                 // Only send if we are not in the same dimension
+                 if ( login.getDimension() != user.getDimension() ) // Waterfall - defer
+                 {
+                     user.unsafe().sendPacket( new Respawn( (Integer) user.getDimension() >= 0 ? -1 : 0, login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
+                 }
+
+                 Login modLogin = new Login( login.getEntityId(), login.isHardcore(), login.getGameMode(), login.getPreviousGameMode(), login.getWorldNames(), login.getDimensions(), login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(),
+                         (byte) user.getPendingConnection().getListener().getTabListSize(), login.getLevelType(), login.getViewDistance(), login.isReducedDebugInfo(), login.isNormalRespawn(), login.isDebug(), login.isFlat() );
+                 user.unsafe().sendPacket(modLogin);
+
+                 // Only send if we're in the same dimension
+                 if ( login.getDimension() == user.getDimension() ) // Waterfall - defer
+                 {
+                     user.unsafe().sendPacket( new Respawn( (Integer) login.getDimension() >= 0 ? -1 : 0, login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
+                 }
+             }
+             // Waterfall end (Edit by KettleCord)
             user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
             if ( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_14 )
             {

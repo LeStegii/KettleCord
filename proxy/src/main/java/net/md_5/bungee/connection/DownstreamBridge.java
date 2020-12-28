@@ -63,6 +63,7 @@ import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.tab.TabList;
 
+
 @RequiredArgsConstructor
 public class DownstreamBridge extends PacketHandler
 {
@@ -75,10 +76,8 @@ public class DownstreamBridge extends PacketHandler
     public void exception(Throwable t) throws Exception
     {
         if ( server.isObsolete() )
-        {
             // do not perform any actions if the user has already moved
             return;
-        }
 
         ServerInfo def = con.updateAndGetNextServer( server.getInfo() );
         if ( def != null )
@@ -98,14 +97,10 @@ public class DownstreamBridge extends PacketHandler
         // We lost connection to the server
         server.getInfo().removePlayer( con );
         if ( bungee.getReconnectHandler() != null )
-        {
             bungee.getReconnectHandler().setServer( con );
-        }
 
         if ( !server.isObsolete() )
-        {
             con.disconnect( bungee.getTranslation( "lost_connection" ) );
-        }
 
         ServerDisconnectEvent serverDisconnectEvent = new ServerDisconnectEvent( con, server.getInfo() );
         bungee.getPluginManager().callEvent( serverDisconnectEvent );
@@ -152,7 +147,8 @@ public class DownstreamBridge extends PacketHandler
         switch ( objective.getAction() )
         {
             case 0:
-                serverScoreboard.addObjective( new Objective( objective.getName(), objective.getValue(), objective.getType().toString() ) );
+                //serverScoreboard.addObjective( new Objective( objective.getName(), objective.getValue(), objective.getType().toString() ) );
+                serverScoreboard.addObjective( new Objective( objective.getName(), objective.getValue(), objective.getType() != null ? objective.getType().toString() : null ) ); // Travertine - 1.7 protocol support
                 break;
             case 1:
                 serverScoreboard.removeObjective( objective.getName() );
@@ -162,7 +158,8 @@ public class DownstreamBridge extends PacketHandler
                 if ( oldObjective != null )
                 {
                     oldObjective.setValue( objective.getValue() );
-                    oldObjective.setType( objective.getType().toString() );
+                    //oldObjective.setType( objective.getType().toString() );
+                    oldObjective.setType( objective.getType() != null ? objective.getType().toString() : null ); // Travertine - 1.7 protocol support
                 }
                 break;
             default:
@@ -215,9 +212,7 @@ public class DownstreamBridge extends PacketHandler
             t = new Team( team.getName() );
             serverScoreboard.addTeam( t );
         } else
-        {
             t = serverScoreboard.getTeam( team.getName() );
-        }
 
         if ( t != null )
         {
@@ -260,16 +255,26 @@ public class DownstreamBridge extends PacketHandler
 
         if ( pluginMessage.getTag().equals( con.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand" ) )
         {
-            ByteBuf brand = Unpooled.wrappedBuffer( pluginMessage.getData() );
-            String serverBrand = DefinedPacket.readString( brand );
-            brand.release();
+            if ( con.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_8 )
+            {
+                ByteBuf brand = Unpooled.wrappedBuffer( pluginMessage.getData() );
+                String serverBrand = DefinedPacket.readString( brand );
+                brand.release();
 
-            Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
+                Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
 
-            brand = ByteBufAllocator.DEFAULT.heapBuffer();
-            DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand );
-            pluginMessage.setData( DefinedPacket.toArray( brand ) );
-            brand.release();
+                brand = ByteBufAllocator.DEFAULT.heapBuffer();
+                DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand, brand );
+                pluginMessage.setData( DefinedPacket.readArray( brand ) );
+                brand.release();
+            } else
+            {
+                String serverBrand = new String( pluginMessage.getData(), "UTF-8" );
+
+                Preconditions.checkState( !serverBrand.contains( bungee.getName() ), "Cannot connect proxy to itself!" );
+
+                pluginMessage.setData( ( bungee.getName() + " (" + bungee.getVersion() + ")" + " <- " + serverBrand ).getBytes( "UTF-8" ) );
+            }
             // changes in the packet are ignored so we need to send it manually
             con.unsafe().sendPacket( pluginMessage );
             throw CancelSendSignal.INSTANCE;
@@ -288,7 +293,7 @@ public class DownstreamBridge extends PacketHandler
                     // Read data from server
                     String channel = in.readUTF();
                     short len = in.readShort();
-                    byte[] data = new byte[ len ];
+                    byte[] data = new byte[len];
                     in.readFully( data );
 
                     // Prepare new data to send
@@ -309,7 +314,7 @@ public class DownstreamBridge extends PacketHandler
                 String target = in.readUTF();
                 String channel = in.readUTF();
                 short len = in.readShort();
-                byte[] data = new byte[ len ];
+                byte[] data = new byte[len];
                 in.readFully( data );
 
                 // Prepare new data to send
@@ -343,9 +348,7 @@ public class DownstreamBridge extends PacketHandler
                 {
                     ServerInfo server = bungee.getServerInfo( target );
                     if ( server != null )
-                    {
                         server.sendData( "BungeeCord", payload );
-                    }
                 }
             }
             if ( subChannel.equals( "Connect" ) )
@@ -363,9 +366,7 @@ public class DownstreamBridge extends PacketHandler
                 {
                     ServerInfo server = bungee.getServerInfo( in.readUTF() );
                     if ( server != null )
-                    {
                         player.connect( server );
-                    }
                 }
             }
             if ( subChannel.equals( "IP" ) )

@@ -23,7 +23,10 @@ public class LoginSuccess extends DefinedPacket
     @Override
     public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
+        if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_2 )
+        {
+            uuid = readUndashedUUID( buf );
+        } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
             uuid = readUUID( buf );
         } else
@@ -36,7 +39,10 @@ public class LoginSuccess extends DefinedPacket
     @Override
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
+        if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_7_2 )
+        {
+            writeUndashedUUID( uuid.toString(), buf );
+        } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
             writeUUID( uuid, buf );
         } else
@@ -51,4 +57,16 @@ public class LoginSuccess extends DefinedPacket
     {
         handler.handle( this );
     }
+
+    // Thanks to Travertine https://github.com/PaperMC/Travertine/blob/master/Waterfall-Proxy-Patches/0003-1.7.x-Protocol-Patch.patch#L936
+    private static UUID readUndashedUUID(ByteBuf buf)
+    {
+        return UUID.fromString( new StringBuilder( readString( buf ) ).insert( 20, '-' ).insert( 16, '-' ).insert( 12, '-' ).insert( 8, '-' ).toString() );
+    }
+
+    private static void writeUndashedUUID(String uuid, ByteBuf buf)
+    {
+        writeString( new StringBuilder( 32 ).append( uuid, 0, 8 ).append( uuid, 9, 13 ).append( uuid, 14, 18 ).append( uuid, 19, 23 ).append( uuid, 24, 36 ).toString(), buf );
+    }
+    // Travertine end
 }

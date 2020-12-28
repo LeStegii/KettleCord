@@ -257,7 +257,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     @Override
                     public void done(ProxyPingEvent pingResult, Throwable error)
                     {
-                        Gson gson = BungeeCord.getInstance().gson;
+                        Gson gson = handshake.getProtocolVersion() == ProtocolConstants.MINECRAFT_1_7_2 ? BungeeCord.getInstance().gsonLegacy : BungeeCord.getInstance().gson;
                         unsafe.sendPacket( new StatusResponse( gson.toJson( pingResult.getResponse() ) ) );
                         if ( bungee.getConnectionThrottle() != null )
                         {
@@ -539,6 +539,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                             userCon.init();
 
                             unsafe.sendPacket( new LoginSuccess( getUniqueId(), getName() ) );
+
                             ch.setProtocol( Protocol.GAME );
 
                             ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new UpstreamBridge( bungee, userCon ) );

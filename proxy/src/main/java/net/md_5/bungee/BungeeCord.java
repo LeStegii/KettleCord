@@ -77,6 +77,7 @@ import net.md_5.bungee.command.CommandBungee;
 import net.md_5.bungee.command.CommandEnd;
 import net.md_5.bungee.command.CommandIP;
 import net.md_5.bungee.command.CommandPerms;
+import net.md_5.bungee.command.CommandPlugins;
 import net.md_5.bungee.command.CommandReload;
 import net.md_5.bungee.command.ConsoleCommandCompleter;
 import net.md_5.bungee.command.ConsoleCommandSender;
@@ -121,7 +122,8 @@ public class BungeeCord extends ProxyServer
      * locations.yml save thread.
      */
     private final Timer saveThread = new Timer( "Reconnect Saver" );
-    private final Timer metricsThread = new Timer( "Metrics Thread" );
+    // KettleCord (disable metrics)
+    // private final Timer metricsThread = new Timer( "Metrics Thread" );
     /**
      * Server socket listener.
      */
@@ -166,7 +168,16 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer() )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolConstants.MINECRAFT_1_7_6 ) )
+            .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
+    public final Gson gsonLegacy = new GsonBuilder()
+            .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
+            .registerTypeAdapter( TextComponent.class, new TextComponentSerializer() )
+            .registerTypeAdapter( TranslatableComponent.class, new TranslatableComponentSerializer() )
+            .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
+            .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
+            .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
+            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer( ProtocolConstants.MINECRAFT_1_7_2 ) )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     @Getter
     private ConnectionThrottle connectionThrottle;
@@ -224,7 +235,8 @@ public class BungeeCord extends ProxyServer
         getPluginManager().registerCommand( null, new CommandIP() );
         getPluginManager().registerCommand( null, new CommandBungee() );
         getPluginManager().registerCommand( null, new CommandPerms() );
-
+        getPluginManager().registerCommand( null, new CommandPlugins() );
+        
         if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) )
         {
             if ( EncryptionUtil.nativeFactory.load() )
@@ -277,7 +289,8 @@ public class BungeeCord extends ProxyServer
             registerChannel( ForgeConstants.FML_HANDSHAKE_TAG );
             registerChannel( ForgeConstants.FORGE_REGISTER );
 
-            getLogger().warning( "MinecraftForge support is currently unmaintained and may have unresolved issues. Please use at your own risk." );
+            // KettleCord (disable forge warning)
+            // getLogger().warning( "MinecraftForge support is currently unmaintained and may have unresolved issues. Please use at your own risk." );
         }
 
         isRunning = true;
@@ -301,7 +314,8 @@ public class BungeeCord extends ProxyServer
                 }
             }
         }, 0, TimeUnit.MINUTES.toMillis( 5 ) );
-        metricsThread.scheduleAtFixedRate( new Metrics(), 0, TimeUnit.MINUTES.toMillis( Metrics.PING_INTERVAL ) );
+        // KettleCord (disable metrics)
+        // metricsThread.scheduleAtFixedRate( new Metrics(), 0, TimeUnit.MINUTES.toMillis( Metrics.PING_INTERVAL ) );
 
         Runtime.getRuntime().addShutdownHook( new Thread()
         {
@@ -459,7 +473,8 @@ public class BungeeCord extends ProxyServer
             reconnectHandler.close();
         }
         saveThread.cancel();
-        metricsThread.cancel();
+        // KettleCord (disable metrics)
+        // metricsThread.cancel();
 
         getLogger().info( "Disabling plugins" );
         for ( Plugin plugin : Lists.reverse( new ArrayList<>( pluginManager.getPlugins() ) ) )
@@ -528,7 +543,7 @@ public class BungeeCord extends ProxyServer
     @Override
     public String getName()
     {
-        return "BungeeCord";
+        return config.getCustomServerName();
     }
 
     @Override
