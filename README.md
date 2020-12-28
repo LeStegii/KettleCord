@@ -1,5 +1,5 @@
 
-BungeeCord for 1.7/1.8/1.9/1.10/1.11/1.12/1.13/1.14/1.15/1.16
+BungeeCord for 1.7-1.16 with Forge and Fabric Support
 ==========
 
 **Fork:** [BungeeCord](https://github.com/SpigotMC/BungeeCord) >> [HexaCord](https://github.com/HexagonMC/BungeeCord) >> [KettleCord](https://github.com/UeberallGebannt/KettleCord/)
@@ -11,6 +11,7 @@ If you want more informations about it, please visit it's github page [here](htt
 
 **What's KettleCord?**</br>
 KettleCord is a fork of HexaCord with some little changes for our Minecraft network KettleMC.net.</br>
+It also implements basic support for Fabric since normal BungeeCord blocks a packet that Fabric is waiting for.</br>
 We implemented some patches from [Waterfall](https://github.com/PaperMC/Waterfall/) in order to patch some forge issues.
 
 ### Security warning
