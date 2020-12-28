@@ -14,6 +14,10 @@ KettleCord is a fork of HexaCord with some little changes for our Minecraft netw
 It also implements basic support for Fabric since normal BungeeCord blocks a packet that Fabric is waiting for.</br>
 We implemented some patches from [Waterfall](https://github.com/PaperMC/Waterfall/) in order to patch some forge issues.
 
+### Fabric support
+KettleCord implements basic Fabric support by BukkitBuilder so that you can use Fabric servers in your network.</br>
+You have to enable `fabric-support` in the config and install the [FabricProxy](https://www.curseforge.com/minecraft/mc-mods/fabricproxy) mod on your Fabric server.
+
 ### Security warning
 
 As your Minecraft servers have to run without authentication (online-mode=false) for BungeeCord to work, this poses a new security risk. Users may connect to your servers directly, under any username they wish to use. The kick "If you wish to use IP forwarding, please enable it in your BungeeCord config as well!" does not protect your Spigot servers.
