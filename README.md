@@ -1,5 +1,5 @@
 
-BungeeCord for 1.7/1.8/1.9/1.10/1.11/1.12/1.13/1.14/1.15/1.16
+BungeeCord for 1.7/1.8/1.9/1.10/1.11/1.12/1.13/1.14/1.15/1.16/1.17
 ==========
 
 **Fork:** [BungeeCord](https://github.com/SpigotMC/BungeeCord) >> [HexaCord](https://github.com/HexagonMC/BungeeCord) >> [KettleCord](https://github.com/UeberallGebannt/KettleCord/)
