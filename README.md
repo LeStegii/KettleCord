@@ -1,4 +1,11 @@
 
+🚧 Archived
+==========
+This project is now archived because updating became more and more annoying and since I don't depend on BungeeCord anymore, I will stop developing this fork.
+
+Thank you to everyone who used this project! It was very fun while it lasted. If you want an alternative, check out [HexaCord](https://github.com/HexagonMC/BungeeCord) or use [Velocity](velocitypowered.com/) instead of BungeeCord.
+
+
 BungeeCord for 1.7/1.8/1.9/1.10/1.11/1.12/1.13/1.14/1.15/1.16/1.17
 ==========
 
