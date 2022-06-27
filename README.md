@@ -3,7 +3,11 @@
 ==========
 This project is now archived because updating became more and more annoying and since I don't depend on BungeeCord anymore, I will stop developing this fork.
 
-Thank you to everyone who used this project! It was very fun while it lasted. If you want an alternative, check out [HexaCord](https://github.com/HexagonMC/BungeeCord) or use [Velocity](velocitypowered.com/) instead of BungeeCord.
+Thank you to everyone who used this project! It was very fun while it lasted. If you want an alternative, check out [Waterfall](https://github.com/PaperMC/Waterfall) or use [Velocity](velocitypowered.com/) instead of BungeeCord.
+
+**Edit:** As of 27.06.2022 the HexagonMC team announced that HexaCord is abandoned. Due to this announcement, HexaCord was replaced with Waterfall in the recommendations.
+
+![grafik](https://user-images.githubusercontent.com/50475262/175911690-04d056f7-9d73-44c1-8279-d3470bfc7165.png)
 
 
 BungeeCord for 1.7/1.8/1.9/1.10/1.11/1.12/1.13/1.14/1.15/1.16/1.17
